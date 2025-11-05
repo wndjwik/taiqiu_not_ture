@@ -419,7 +419,7 @@ const showRechargeDialog = async (member) => {
 
 const showConsumeDialog = async (member) => {
   try {
-    const { value } = await ElMessageBox.prompt('请输入消费金额', '会员消费', {
+    const { value } = await ElMessageBox.prompt('请输入扣款金额', '会员消费', {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       inputPattern: /^\d+(\.\d{1,2})?$/,
@@ -440,7 +440,7 @@ const showConsumeDialog = async (member) => {
       // 二次确认
       await ElMessageBox.confirm(
         `是否对会员"${member.name}"进行扣款，扣款后的金额为¥${afterBalance.toFixed(2)}？`,
-        '确认消费',
+        '确认',
         {
           confirmButtonText: '确认',
           cancelButtonText: '取消',

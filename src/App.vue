@@ -51,11 +51,20 @@
                 <el-icon><Document /></el-icon>
                 <span>消费记录</span>
               </el-menu-item>
-              <el-menu-item index="4">
+              <el-sub-menu index="4">
+                <template #title>
+                  <el-icon><SwitchButton /></el-icon>
+                  <span>球桌管理</span>
+                </template>
+                <el-menu-item index="4-1">桌台运营</el-menu-item>
+                <el-menu-item index="4-2">预订管理</el-menu-item>
+                <el-menu-item index="4-3">桌台配置</el-menu-item>
+              </el-sub-menu>
+              <el-menu-item index="5">
                 <el-icon><User /></el-icon>
                 <span>员工管理</span>
               </el-menu-item>
-              <el-menu-item index="5">
+              <el-menu-item index="6">
                 <el-icon><Setting /></el-icon>
                 <span>系统设置</span>
               </el-menu-item>
@@ -110,7 +119,7 @@ const userInfo = ref(null)
 // 添加一个新的响应式变量专门用于显示操作员名称
 const operatorName = ref('张三')
 
-const menuRoutes = ['/', '/members', '/recharge-records', '/consume-records', '/employees', '/settings']
+const menuRoutes = ['/', '/members', '/recharge-records', '/consume-records', '/tables', '/table-reservations', '/table-setup', '/employees', '/settings']
 
 // 根据当前路由设置激活菜单
 const updateActiveMenu = () => {
@@ -124,6 +133,9 @@ const currentTitle = computed(() => {
     '/members': '会员管理',
     '/recharge-records': '充值记录',
     '/consume-records': '消费记录',
+    '/tables': '桌台运营',
+    '/table-reservations': '预订管理',
+    '/table-setup': '桌台配置',
     '/employees': '员工管理',
     '/settings': '系统设置'
   }
@@ -133,24 +145,22 @@ const currentTitle = computed(() => {
 const onMenuChange = (index) => {
   console.log(`菜单点击索引: ${index}`);
   activeMenu.value = index;
-  const routePath = menuRoutes[parseInt(index)];
-  console.log(`尝试导航到: ${routePath}`);
   
-  try {
-    // 使用replace方法替代push，避免可能的导航栈问题
-    router.replace(routePath).then(() => {
-      console.log(`成功导航到: ${routePath}`);
-    }).catch(error => {
-      console.error(`导航失败: ${error.message}`);
-      // 如果导航失败，尝试直接设置路由
-      router.push(routePath);
-    });
-  } catch (error) {
-    console.error(`菜单处理错误: ${error.message}`);
-    // 最后的备选方案：强制刷新页面
-    if (routePath) {
-      window.location.hash = `#${routePath}`;
-    }
+  // 处理子菜单点击
+  const routeMap = {
+    '0': '/',
+    '1': '/members',
+    '2': '/recharge-records',
+    '3': '/consume-records',
+    '4-1': '/tables',
+    '4-2': '/table-reservations',
+    '4-3': '/table-setup',
+    '5': '/employees',
+    '6': '/settings'
+  };
+  
+  if (routeMap[index]) {
+    router.push(routeMap[index]);
   }
 }
 

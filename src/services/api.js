@@ -65,6 +65,11 @@ export const request = async (url, options = {}) => {
         ...fetchOptions,
       });
       
+      // 检查响应状态
+      if (!response.ok) {
+        console.error('API请求失败，状态码:', response.status);
+        throw new Error(`API请求失败，状态码: ${response.status}`);
+      }
 
     } catch (fetchError) {
       console.error('Fetch请求失败:', fetchError);
@@ -73,7 +78,7 @@ export const request = async (url, options = {}) => {
 
     try {
       const data = await response.json();
-
+      console.log('API响应数据:', data);
       return data;
     } catch (jsonError) {
       console.error('响应解析错误:', jsonError);
@@ -166,6 +171,106 @@ export const backupAPI = {
 };
 
 // 导出统一的API对象
+// 球桌相关API
+export const tableAPI = {
+  // 获取所有球桌
+  getAllTables: () => request('/tables'),
+  
+  // 添加球桌
+  addTable: (tableData) => request('/tables', {
+    method: 'POST',
+    body: JSON.stringify(tableData),
+  }),
+  
+  // 更新球桌
+  updateTable: (tableId, tableData) => request(`/tables/${tableId}`, {
+    method: 'PUT',
+    body: JSON.stringify(tableData),
+  }),
+  
+  // 删除球桌
+  deleteTable: (tableId) => request(`/tables/${tableId}`, {
+    method: 'DELETE',
+  }),
+  
+  // 更新球桌布局
+  updateTableLayout: (layoutData) => request('/tables/layout', {
+    method: 'POST',
+    body: JSON.stringify(layoutData),
+  }),
+  
+  // 获取球桌状态
+  getTableStatus: () => request('/tables/status'),
+};
+
+// 球桌使用相关API
+export const tableUsageAPI = {
+  // 开台
+  openTable: (tableData) => request('/table-usage/open', {
+    method: 'POST',
+    body: JSON.stringify(tableData),
+  }),
+  
+  // 结台
+  closeTable: (usageId, closeData) => request(`/table-usage/close/${usageId}`, {
+    method: 'POST',
+    body: JSON.stringify(closeData),
+  }),
+  
+  // 获取开台记录
+  getTableUsages: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/table-usage${queryString ? '?' + queryString : ''}`);
+  },
+  
+  // 取消开台
+  cancelTableUsage: (usageId) => request(`/table-usage/cancel/${usageId}`, {
+    method: 'POST',
+  }),
+};
+
+// 预订相关API
+export const reservationAPI = {
+  // 创建预订
+  createReservation: (reservationData) => request('/reservations', {
+    method: 'POST',
+    body: JSON.stringify(reservationData),
+  }),
+  
+  // 更新预订
+  updateReservation: (reservationId, reservationData) => request(`/reservations/${reservationId}`, {
+    method: 'PUT',
+    body: JSON.stringify(reservationData),
+  }),
+  
+  // 获取预订列表
+  getReservations: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/reservations${queryString ? '?' + queryString : ''}`);
+  },
+  
+  // 取消预订
+  cancelReservation: (reservationId) => request(`/reservations/${reservationId}/cancel`, {
+    method: 'POST',
+  }),
+  
+  // 标记预订到店
+  markArrived: (reservationId) => request(`/reservations/${reservationId}/arrived`, {
+    method: 'POST',
+  }),
+  
+  // 完成预订
+  completeReservation: (reservationId) => request(`/reservations/${reservationId}/complete`, {
+    method: 'POST',
+  }),
+  
+  // 获取可用球桌
+  getAvailableTables: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/tables/available${queryString ? '?' + queryString : ''}`);
+  },
+};
+
 // 员工相关API
 export const employeeAPI = {
   // 登录
@@ -209,6 +314,30 @@ export const employeeAPI = {
   }),
 };
 
+// 导出球桌相关API函数
+export const getAllTables = tableAPI.getAllTables;
+export const addTable = tableAPI.addTable;
+export const updateTable = tableAPI.updateTable;
+export const deleteTable = tableAPI.deleteTable;
+export const updateTableLayout = tableAPI.updateTableLayout;
+export const getTableStatus = tableAPI.getTableStatus;
+
+// 导出球桌使用相关API函数
+export const openTable = tableUsageAPI.openTable;
+export const closeTable = tableUsageAPI.closeTable;
+export const getTableUsages = tableUsageAPI.getTableUsages;
+export const cancelTableUsage = tableUsageAPI.cancelTableUsage;
+
+// 导出预订相关API函数
+export const createReservation = reservationAPI.createReservation;
+export const updateReservation = reservationAPI.updateReservation;
+export const getReservations = reservationAPI.getReservations;
+export const cancelReservation = reservationAPI.cancelReservation;
+export const markArrived = reservationAPI.markArrived;
+export const markReservationArrived = reservationAPI.markArrived;
+export const completeReservation = reservationAPI.completeReservation;
+export const getAvailableTables = reservationAPI.getAvailableTables;
+
 export const api = {
   // 会员相关
   getAllMembers: memberAPI.getAllMembers,
@@ -242,4 +371,24 @@ export const api = {
   restoreData: backupAPI.restoreData,
   getBackupFiles: backupAPI.getBackupFiles,
   getStats: backupAPI.getStats,
+  
+  // 球桌相关
+  getAllTables: tableAPI.getAllTables,
+  addTable: tableAPI.addTable,
+  updateTable: tableAPI.updateTable,
+  deleteTable: tableAPI.deleteTable,
+  updateTableLayout: tableAPI.updateTableLayout,
+  getTableStatus: tableAPI.getTableStatus,
+  
+  // 球桌使用相关
+  openTable: tableUsageAPI.openTable,
+  closeTable: tableUsageAPI.closeTable,
+  getTableUsages: tableUsageAPI.getTableUsages,
+  cancelTableUsage: tableUsageAPI.cancelTableUsage,
+  
+  // 预订相关
+  createReservation: reservationAPI.createReservation,
+  getReservations: reservationAPI.getReservations,
+  cancelReservation: reservationAPI.cancelReservation,
+  markArrived: reservationAPI.markArrived,
 };

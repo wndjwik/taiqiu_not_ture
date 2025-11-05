@@ -9,18 +9,25 @@ const rechargeRoutes = require('./routes/recharge');
 const consumeRoutes = require('./routes/consume');
 const dataRoutes = require('./routes/data');
 const employeeRoutes = require('./routes/employees');
+const tableRoutes = require('./routes/tables');
+const tableUsageRoutes = require('./routes/tableUsage');
+const tableReservationRoutes = require('./routes/tableReservations');
 
 // 导入控制器
 const employeeController = require('./controllers/employeeController');
 
-// 导入备份服务
+// 导入服务
 const backupService = require('./services/backupService');
+const scheduleService = require('./services/scheduleService');
 
 // 导入模型（用于数据库同步）
 const Member = require('./models/Member');
 const RechargeRecord = require('./models/RechargeRecord');
 const ConsumeRecord = require('./models/ConsumeRecord');
 const Employee = require('./models/Employee');
+const Table = require('./models/Table');
+const TableUsage = require('./models/TableUsage');
+const TableReservation = require('./models/TableReservation');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -75,6 +82,9 @@ app.use('/api/recharge', rechargeRoutes);
 app.use('/api/consume', consumeRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/tables', tableRoutes);
+app.use('/api/table-usage', tableUsageRoutes);
+app.use('/api/reservations', tableReservationRoutes);
 
 // 认证路由（使用员工路由中的登录接口，路径为/api/employees/login）
 
@@ -90,6 +100,10 @@ app.get('/', (req, res) => {
       members: '/api/members',
       recharge: '/api/recharge',
       consume: '/api/consume',
+      employees: '/api/employees',
+      tables: '/api/tables',
+      table_usage: '/api/table-usage',
+      reservations: '/api/reservations',
       data: {
           stats: '/api/data/stats',
           backup: '/api/data/backup',
@@ -116,6 +130,9 @@ const initializeDatabase = async () => {
     await RechargeRecord.sync({ force: false });
     await ConsumeRecord.sync({ force: false });
     await Employee.sync({ force: false });
+    await Table.sync({ force: false }); // 使用force: false以保证数据安全
+    await TableUsage.sync({ force: false });
+    await TableReservation.sync({ force: false });
     
     console.log('✅ 数据库表同步完成');
     
@@ -141,8 +158,9 @@ const startServer = async () => {
     // 获取可用端口
     const availablePort = await getAvailablePort(PORT);
     
-    // 初始化备份服务
+    // 初始化服务
     backupService.init();
+    scheduleService.init();
     
     // 启动服务器
     app.listen(availablePort, () => {

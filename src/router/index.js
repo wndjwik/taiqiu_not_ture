@@ -8,6 +8,9 @@ import RechargeRecords from '@/views/RechargeRecords.vue'
 import ConsumeRecords from '@/views/ConsumeRecords.vue'
 import Settings from '@/views/Settings.vue'
 import Employees from '@/views/Employees.vue'
+import TableManagement from '@/views/TableManagement.vue'
+import TableReservations from '@/views/TableReservations.vue'
+import TableSetup from '@/views/TableSetup.vue'
 
 const routes = [
   {
@@ -50,6 +53,24 @@ const routes = [
     path: '/employees',
     name: 'Employees',
     component: Employees,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tables',
+    name: 'TableManagement',
+    component: TableManagement,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/table-reservations',
+    name: 'TableReservations',
+    component: TableReservations,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/table-setup',
+    name: 'TableSetup',
+    component: TableSetup,
     meta: { requiresAuth: true }
   },
   // 临时添加重定向路由，确保员工管理页面可以访问
