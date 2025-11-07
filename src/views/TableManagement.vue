@@ -238,8 +238,8 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
-import { getTableStatus, openTable, closeTable, createReservation } from '@/services/api';
+import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { getTableStatus, openTable, closeTable, createReservation, configAPI } from '@/services/api';
 import { getUserInfo } from '@/stores/user';
 import { ElMessage } from 'element-plus';
 
@@ -255,6 +255,16 @@ export default {
     const hoveredTableId = ref(null);
     const currentUser = ref(getUserInfo()?.name || '管理员');
     const memberSearchResults = ref([]);
+    
+    // 收银台位置
+    const cashierPosition = reactive({ x: 50, y: 50 });
+    const cashierStyle = computed(() => ({
+      position: 'absolute',
+      left: `${cashierPosition.x}px`,
+      top: `${cashierPosition.y}px`,
+      width: '120px',
+      height: '80px'
+    }));
     
     // 弹窗状态
     const openTableDialogVisible = ref(false);
@@ -331,24 +341,41 @@ export default {
       return items;
     });
     
-    // 收银台样式
-    const cashierStyle = {
-      position: 'absolute',
-      left: '50px',
-      bottom: '50px',
-      width: '120px',
-      height: '80px'
+    // 从数据库加载收银台位置
+    const loadCashierPosition = async () => {
+      try {
+        const response = await configAPI.getCashierPosition();
+        if (response.success && response.data) {
+          cashierPosition.x = response.data.x;
+          cashierPosition.y = response.data.y;
+          console.log('从数据库加载收银台位置:', response.data);
+        }
+      } catch (error) {
+        console.error('加载收银台位置失败:', error);
+        // 尝试从本地存储恢复作为备份
+        try {
+          const savedCashierPos = localStorage.getItem('cashierPosition');
+          if (savedCashierPos) {
+            const parsedPos = JSON.parse(savedCashierPos);
+            cashierPosition.x = parsedPos.x;
+            cashierPosition.y = parsedPos.y;
+            console.log('从本地存储恢复收银台位置:', parsedPos);
+          }
+        } catch (localError) {
+          console.error('从本地存储恢复收银台位置失败:', localError);
+        }
+      }
     };
     
     // 获取球桌样式
     const getTableStyle = (table) => {
       return {
         position: 'absolute',
-        left: `${table.position.x}px`,
-        top: `${table.position.y}px`,
-        width: `${table.size.width}px`,
-        height: `${table.size.height}px`,
-        transform: `rotate(${table.rotation}deg)`
+        left: `${table.position_x || 0}px`,
+        top: `${table.position_y || 0}px`,
+        width: `${table.size_width || 100}px`,
+        height: `${table.size_height || 200}px`,
+        transform: `rotate(${table.rotation || 0}deg)`
       };
     };
     
@@ -384,11 +411,43 @@ export default {
     const loadTableStatus = async () => {
       try {
         const response = await getTableStatus();
-        if (response.success) {
-          tables.value = response.data;
+        if (response.success && Array.isArray(response.data)) {
+          // 处理后端返回的数据格式，将嵌套的position和size对象展开为顶层属性
+          const processedTables = response.data.map(table => ({
+            ...table,
+            position_x: table.position?.x,
+            position_y: table.position?.y,
+            size_width: table.size?.width,
+            size_height: table.size?.height
+          }));
+          
+          // 检查每个球桌是否包含必要的位置和大小属性
+          const invalidTables = processedTables.filter(table => 
+            table.position_x === undefined || table.position_x === null ||
+            table.position_y === undefined || table.position_y === null ||
+            table.size_width === undefined || table.size_width === null ||
+            table.size_height === undefined || table.size_height === null
+          );
+          
+          if (invalidTables.length > 0) {
+            // 获取缺少数据的球桌编号列表
+            const invalidTableNumbers = invalidTables.map(table => table.table_no || '未知桌号').join(', ');
+            console.error('球桌数据缺失必要的位置或大小属性:', invalidTables);
+            ElMessage.error(`错误：发现${invalidTables.length}个球桌缺少必要的位置或大小数据，桌号：${invalidTableNumbers}`);
+            tables.value = []; // 清空数据，不显示有问题的球桌
+          } else {
+            tables.value = processedTables;
+            console.log('球桌数据已加载并处理:', tables.value);
+          }
+        } else {
+          console.error('获取球桌状态失败：返回数据格式不正确');
+          ElMessage.error('获取球桌状态失败：数据格式不正确');
+          tables.value = [];
         }
       } catch (error) {
-        ElMessage.error('获取球桌状态失败');
+        console.error('获取球桌状态发生错误:', error);
+        ElMessage.error(`获取球桌状态失败：${error.message || '未知错误'}`);
+        tables.value = []; // 出错时清空数据，不显示默认球桌
       }
     };
     
@@ -427,7 +486,7 @@ export default {
         const billingMinutes = Math.ceil(durationMinutes / 60) * 60;
         
         closeTableForm.value = {
-          usage_id: '', // 需要从API获取
+          usage_id: table.usage_info.usage_id, // 从API返回的数据中获取
           table_no: table.table_no,
           member_name: table.usage_info.member_name,
           start_time: formatTime(table.usage_info.start_time),
@@ -531,14 +590,11 @@ export default {
       // 筛选逻辑已通过computed实现
     };
     
-    // 定时刷新数据
-    let refreshTimer = null;
-    
     // 生命周期
-    onMounted(() => {
-      loadTableStatus();
-      // 每30秒刷新一次数据
-      refreshTimer = setInterval(loadTableStatus, 30000);
+    onMounted(async () => {
+      // 每次进入页面时刷新一次数据
+      await loadCashierPosition();
+      await loadTableStatus();
     });
     
     return {

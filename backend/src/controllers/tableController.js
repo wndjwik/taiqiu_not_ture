@@ -224,6 +224,7 @@ exports.getTableStatus = async (req, res) => {
       const usage = activeUsages.find(u => u.table_id === table.table_id);
       if (usage) {
         statusInfo.usage_info = {
+          usage_id: usage.usage_id,
           member_name: usage.member_name,
           start_time: usage.start_time
         };

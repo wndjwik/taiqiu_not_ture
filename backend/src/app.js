@@ -12,6 +12,7 @@ const employeeRoutes = require('./routes/employees');
 const tableRoutes = require('./routes/tables');
 const tableUsageRoutes = require('./routes/tableUsage');
 const tableReservationRoutes = require('./routes/tableReservations');
+const configRoutes = require('./routes/config');
 
 // 导入控制器
 const employeeController = require('./controllers/employeeController');
@@ -28,6 +29,7 @@ const Employee = require('./models/Employee');
 const Table = require('./models/Table');
 const TableUsage = require('./models/TableUsage');
 const TableReservation = require('./models/TableReservation');
+const Config = require('./models/Config');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -85,6 +87,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/table-usage', tableUsageRoutes);
 app.use('/api/reservations', tableReservationRoutes);
+app.use('/api/config', configRoutes);
 
 // 认证路由（使用员工路由中的登录接口，路径为/api/employees/login）
 
@@ -133,6 +136,7 @@ const initializeDatabase = async () => {
     await Table.sync({ force: false }); // 使用force: false以保证数据安全
     await TableUsage.sync({ force: false });
     await TableReservation.sync({ force: false });
+    await Config.sync({ force: false }); // 同步Config模型创建配置表
     
     console.log('✅ 数据库表同步完成');
     

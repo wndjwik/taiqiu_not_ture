@@ -149,7 +149,7 @@
 <script>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { tableAPI, tableUsageAPI } from '@/services/api';
+import { tableAPI, configAPI } from '@/services/api';
 
 export default {
   name: 'TableSetup',
@@ -234,9 +234,12 @@ export default {
     const loadTables = async () => {
       loading.value = true;
       try {
+        console.log('开始获取球桌信息...');
         const response = await tableAPI.getAllTables();
+        console.log('获取球桌信息响应:', response);
         if (response.success) {
           tables.value = response.data || [];
+          console.log('球桌数据:', tables.value);
           // 初始化位置
           tables.value.forEach((table, index) => {
             if (!table.position_x || !table.position_y) {
@@ -253,6 +256,8 @@ export default {
           });
         }
       } catch (error) {
+        console.error('获取球桌信息失败:', error);
+        console.log('错误详情:', error.response || error.message);
         ElMessage.error('获取球桌数据失败');
       } finally {
         loading.value = false;
@@ -488,30 +493,85 @@ export default {
               width: table.size_width,
               height: table.size_height
             }
-          }))
+          })),
+          // 添加收银台位置信息
+          cashier_position: {
+            x: cashierPosition.x,
+            y: cashierPosition.y
+          }
         };
         
         console.log('布局数据准备完成，准备发送请求:', JSON.stringify(layoutData));
-        const response = await tableAPI.updateTableLayout(layoutData);
+        const response = await configAPI.updateTableLayoutWithCashier(layoutData);
         
         console.log('保存布局响应:', response);
+        
         if (response.success) {
           ElMessage.success('布局保存成功');
+          // 同时保存到本地存储作为备份
+          try {
+            localStorage.setItem('cashierPosition', JSON.stringify(cashierPosition));
+            console.log('收银台位置已备份到本地存储');
+          } catch (error) {
+            console.error('备份收银台位置到本地存储失败:', error);
+          }
         } else {
           console.error('保存布局失败，服务器返回错误:', response.message);
           ElMessage.error('保存布局失败: ' + (response.message || '未知错误'));
+          // 发生错误时，至少保存到本地存储
+          try {
+            localStorage.setItem('cashierPosition', JSON.stringify(cashierPosition));
+            console.log('错误情况下，收银台位置已保存到本地存储');
+          } catch (localError) {
+            console.error('保存收银台位置到本地存储失败:', localError);
+          }
         }
       } catch (error) {
         console.error('保存布局异常:', error);
         console.error('错误详情:', error.message, error.stack);
         ElMessage.error('保存布局失败');
+        
+        // 发生错误时，至少保存到本地存储
+        try {
+          localStorage.setItem('cashierPosition', JSON.stringify(cashierPosition));
+          console.log('错误情况下，收银台位置已保存到本地存储');
+        } catch (localError) {
+          console.error('保存收银台位置到本地存储失败:', localError);
+        }
       }
     };
     
     // 生命周期
-    onMounted(() => {
-      loadTables();
+    onMounted(async () => {
+      await loadTables();
+      await loadCashierPosition();
     });
+    
+    // 从数据库加载收银台位置
+    const loadCashierPosition = async () => {
+      try {
+        const response = await configAPI.getCashierPosition();
+        if (response.success && response.data) {
+          cashierPosition.x = response.data.x;
+          cashierPosition.y = response.data.y;
+          console.log('从数据库加载收银台位置:', response.data);
+        }
+      } catch (error) {
+        console.error('加载收银台位置失败:', error);
+        // 尝试从本地存储恢复作为备份
+        try {
+          const savedCashierPos = localStorage.getItem('cashierPosition');
+          if (savedCashierPos) {
+            const parsedPos = JSON.parse(savedCashierPos);
+            cashierPosition.x = parsedPos.x;
+            cashierPosition.y = parsedPos.y;
+            console.log('从本地存储恢复收银台位置:', parsedPos);
+          }
+        } catch (localError) {
+          console.error('从本地存储恢复收银台位置失败:', localError);
+        }
+      }
+    };
     
     return {
       loading,

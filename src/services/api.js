@@ -177,16 +177,22 @@ export const tableAPI = {
   getAllTables: () => request('/tables'),
   
   // 添加球桌
-  addTable: (tableData) => request('/tables', {
-    method: 'POST',
-    body: JSON.stringify(tableData),
-  }),
+  addTable: (tableData) => {
+    // 直接返回前端数据，后端期望table_no而不是table_number
+    return request('/tables', {
+      method: 'POST',
+      body: JSON.stringify(tableData),
+    });
+  },
   
   // 更新球桌
-  updateTable: (tableId, tableData) => request(`/tables/${tableId}`, {
-    method: 'PUT',
-    body: JSON.stringify(tableData),
-  }),
+  updateTable: (tableId, tableData) => {
+    // 直接返回前端数据
+    return request(`/tables/${tableId}`, {
+      method: 'PUT',
+      body: JSON.stringify(tableData),
+    });
+  },
   
   // 删除球桌
   deleteTable: (tableId) => request(`/tables/${tableId}`, {
@@ -203,6 +209,21 @@ export const tableAPI = {
   getTableStatus: () => request('/tables/status'),
 };
 
+// 配置相关API
+export const configAPI = {
+  // 获取收银台位置
+  getCashierPosition: () => request('/config/cashier/position'),
+  
+  // 更新球桌布局（包含收银台位置）
+  updateTableLayoutWithCashier: (layoutData) => {
+    // 直接使用前端数据格式，后端期望tables_info
+    return request('/config/table-layout', {
+      method: 'POST',
+      body: JSON.stringify(layoutData),
+    });
+  },
+};
+
 // 球桌使用相关API
 export const tableUsageAPI = {
   // 开台
@@ -212,7 +233,7 @@ export const tableUsageAPI = {
   }),
   
   // 结台
-  closeTable: (usageId, closeData) => request(`/table-usage/close/${usageId}`, {
+  closeTable: (closeData) => request('/table-usage/close', {
     method: 'POST',
     body: JSON.stringify(closeData),
   }),
@@ -321,6 +342,10 @@ export const updateTable = tableAPI.updateTable;
 export const deleteTable = tableAPI.deleteTable;
 export const updateTableLayout = tableAPI.updateTableLayout;
 export const getTableStatus = tableAPI.getTableStatus;
+
+// 导出配置相关API函数
+export const getCashierPosition = configAPI.getCashierPosition;
+export const updateTableLayoutWithCashier = configAPI.updateTableLayoutWithCashier;
 
 // 导出球桌使用相关API函数
 export const openTable = tableUsageAPI.openTable;

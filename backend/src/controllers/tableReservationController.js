@@ -1,6 +1,7 @@
 const Table = require('../models/Table');
 const TableReservation = require('../models/TableReservation');
 const sequelize = require('../config/sequelize');
+const { Op } = require('sequelize');
 
 // 创建预订
 exports.createReservation = async (req, res) => {
@@ -34,17 +35,17 @@ exports.createReservation = async (req, res) => {
         where: {
           table_id,
           status: 'active',
-          [sequelize.Op.or]: [
+          [Op.or]: [
             { 
-              start_time: { [sequelize.Op.between]: [startTime, endTime] }
+              start_time: { [Op.between]: [startTime, endTime] }
             },
             { 
-              end_time: { [sequelize.Op.between]: [startTime, endTime] }
+              end_time: { [Op.between]: [startTime, endTime] }
             },
             { 
-              [sequelize.Op.and]: [
-                { start_time: { [sequelize.Op.lte]: startTime } },
-                { end_time: { [sequelize.Op.gte]: endTime } }
+              [Op.and]: [
+                { start_time: { [Op.lte]: startTime } },
+                { end_time: { [Op.gte]: endTime } }
               ]
             }
           ]
@@ -93,12 +94,12 @@ exports.getReservations = async (req, res) => {
     const { page = 1, pageSize = 20, table_no, contact_name, status, start_date, end_date } = req.query;
     
     const where = {};
-    if (table_no) where.table_no = { [sequelize.Op.like]: `%${table_no}%` };
-    if (contact_name) where.contact_name = { [sequelize.Op.like]: `%${contact_name}%` };
+    if (table_no) where.table_no = { [Op.like]: `%${table_no}%` };
+    if (contact_name) where.contact_name = { [Op.like]: `%${contact_name}%` };
     if (status) where.status = status;
     if (start_date && end_date) {
       where.start_time = {
-        [sequelize.Op.between]: [new Date(start_date), new Date(end_date + ' 23:59:59')]
+        [Op.between]: [new Date(start_date), new Date(end_date + ' 23:59:59')]
       };
     }
     
@@ -151,10 +152,10 @@ exports.cancelReservation = async (req, res) => {
       const hasOtherReservations = await TableReservation.findOne({
         where: {
           table_id: reservation.table_id,
-          reservation_id: { [sequelize.Op.ne]: reservation_id },
+          reservation_id: { [Op.ne]: reservation_id },
           status: 'active',
-          start_time: { [sequelize.Op.lte]: new Date() },
-          end_time: { [sequelize.Op.gte]: new Date() }
+          start_time: { [Op.lte]: new Date() },
+          end_time: { [Op.gte]: new Date() }
         },
         transaction: t
       });
@@ -214,7 +215,7 @@ exports.checkOverdueReservations = async () => {
     const reservations = await TableReservation.findAll({
       where: {
         status: 'active',
-        start_time: { [sequelize.Op.lte]: overdueTime }
+        start_time: { [Op.lte]: overdueTime }
       }
     });
     
@@ -230,10 +231,10 @@ exports.checkOverdueReservations = async () => {
         const hasOtherReservations = await TableReservation.findOne({
           where: {
             table_id: reservation.table_id,
-            reservation_id: { [sequelize.Op.ne]: reservation.reservation_id },
+            reservation_id: { [Op.ne]: reservation.reservation_id },
             status: 'active',
-            start_time: { [sequelize.Op.lte]: now },
-            end_time: { [sequelize.Op.gte]: now }
+            start_time: { [Op.lte]: now },
+            end_time: { [Op.gte]: now }
           },
           transaction: t
         });
