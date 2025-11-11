@@ -1,0 +1,7 @@
+{
+  "ignore": [
+    "port.txt",
+    "backups/",
+    "database.sqlite"
+  ]
+}

@@ -195,7 +195,7 @@ exports.getTableStatus = async (req, res) => {
     // 获取当前使用中的球桌
     const activeUsages = await TableUsage.findAll({
       where: { status: 'active' },
-      attributes: ['table_id', 'member_name', 'start_time']
+      attributes: ['table_id', 'usage_id', 'member_id', 'member_name', 'start_time']
     });
     
     // 获取当前有效的预订
@@ -225,6 +225,7 @@ exports.getTableStatus = async (req, res) => {
       if (usage) {
         statusInfo.usage_info = {
           usage_id: usage.usage_id,
+          member_id: usage.member_id,
           member_name: usage.member_name,
           start_time: usage.start_time
         };

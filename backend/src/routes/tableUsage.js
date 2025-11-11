@@ -15,4 +15,7 @@ router.get('/', auth, tableUsageController.getTableUsages);
 // 取消开台
 router.put('/cancel/:usage_id', auth, tableUsageController.cancelTableUsage);
 
+// 转台
+router.post('/transfer', auth, tableUsageController.transferTable);
+
 module.exports = router;

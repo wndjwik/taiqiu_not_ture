@@ -97,7 +97,7 @@
           <el-input-number
             v-model="formData.price_per_hour"
             :min="0"
-            :step="10"
+            :step="1"
             placeholder="请输入价格"
           />
         </el-form-item>
@@ -311,7 +311,6 @@ export default {
     
     // 提交表单
     const submitForm = async () => {
-      alert('submitForm 函数被调用，尝试提交球桌数据');
       console.log('submitForm 函数被调用');
       
       // 直接尝试提交，不依赖表单验证

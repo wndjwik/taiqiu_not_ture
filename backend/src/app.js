@@ -134,7 +134,7 @@ const initializeDatabase = async () => {
     await ConsumeRecord.sync({ force: false });
     await Employee.sync({ force: false });
     await Table.sync({ force: false }); // 使用force: false以保证数据安全
-    await TableUsage.sync({ force: false });
+    await TableUsage.sync({ force: false }); // 恢复为安全模式
     await TableReservation.sync({ force: false });
     await Config.sync({ force: false }); // 同步Config模型创建配置表
     

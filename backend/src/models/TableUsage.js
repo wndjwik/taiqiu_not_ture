@@ -64,6 +64,18 @@ const TableUsage = sequelize.define('TableUsage', {
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  transfer_from: {
+    type: DataTypes.STRING(20),
+    allowNull: true // 原桌号
+  },
+  transfer_time: {
+    type: DataTypes.DATE,
+    allowNull: true // 转台时间
+  },
+  transfer_operator: {
+    type: DataTypes.STRING(50),
+    allowNull: true // 转台操作员
   }
 }, {
   tableName: 'table_usages',

@@ -17,19 +17,10 @@ export const loginAPI = {
   }
 }
 
-// 动态获取API基础URL
-const getApiBaseUrl = () => {
-  // 开发环境使用代理，生产环境使用相对路径
-  if (process.env.NODE_ENV === 'development') {
-    return '/api';
-  } else {
-    // 生产环境使用当前窗口的URL
-    const port = window.location.port || (window.location.protocol === 'https:' ? 443 : 80);
-    return `http://localhost:${port}/api`;
-  }
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// 设置API基础URL
+// 后端服务运行在3002端口，API基础路径为/api
+const API_BASE_URL = 'http://localhost:3002/api';
+console.log('API基础URL:', API_BASE_URL);
 
 // 统一的请求函数
 export const request = async (url, options = {}) => {
@@ -53,13 +44,21 @@ export const request = async (url, options = {}) => {
       }
     }
     
-
+    // 获取用户登录状态，添加到请求头
+    const savedUser = sessionStorage.getItem('userInfo');
+    const authHeaders = savedUser ? {
+      'X-User-Info': encodeURIComponent(savedUser)
+    } : {};
+    
+    console.log(`发送API请求: ${fullUrl}`);
+    console.log('请求数据:', fetchOptions.body ? JSON.parse(fetchOptions.body) : {});
     
     let response;
     try {
       response = await fetch(fullUrl, {
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders,
           ...fetchOptions.headers,
         },
         ...fetchOptions,
@@ -67,8 +66,10 @@ export const request = async (url, options = {}) => {
       
       // 检查响应状态
       if (!response.ok) {
+        const errorText = await response.text();
         console.error('API请求失败，状态码:', response.status);
-        throw new Error(`API请求失败，状态码: ${response.status}`);
+        console.error('错误响应内容:', errorText);
+        throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
     } catch (fetchError) {
@@ -87,6 +88,25 @@ export const request = async (url, options = {}) => {
   } catch (error) {
     console.error('API请求处理异常:', error);
     throw error;
+  }
+};
+
+// 测试连接的辅助函数
+export const testApiConnection = async () => {
+  try {
+    // 使用健康检查端点替代根路径，确保返回JSON格式
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    const data = await response.json();
+    console.log('API连接测试结果:', data);
+    return true;
+  } catch (error) {
+    console.error('API连接测试失败:', error);
+    return false;
   }
 };
 
@@ -248,6 +268,12 @@ export const tableUsageAPI = {
   cancelTableUsage: (usageId) => request(`/table-usage/cancel/${usageId}`, {
     method: 'POST',
   }),
+  
+  // 转台
+  transferTable: (transferData) => request('/table-usage/transfer', {
+    method: 'POST',
+    body: JSON.stringify(transferData),
+  }),
 };
 
 // 预订相关API
@@ -352,6 +378,7 @@ export const openTable = tableUsageAPI.openTable;
 export const closeTable = tableUsageAPI.closeTable;
 export const getTableUsages = tableUsageAPI.getTableUsages;
 export const cancelTableUsage = tableUsageAPI.cancelTableUsage;
+export const transferTable = tableUsageAPI.transferTable;
 
 // 导出预订相关API函数
 export const createReservation = reservationAPI.createReservation;
@@ -362,6 +389,8 @@ export const markArrived = reservationAPI.markArrived;
 export const markReservationArrived = reservationAPI.markArrived;
 export const completeReservation = reservationAPI.completeReservation;
 export const getAvailableTables = reservationAPI.getAvailableTables;
+
+
 
 export const api = {
   // 会员相关
@@ -410,10 +439,13 @@ export const api = {
   closeTable: tableUsageAPI.closeTable,
   getTableUsages: tableUsageAPI.getTableUsages,
   cancelTableUsage: tableUsageAPI.cancelTableUsage,
+  transferTable: tableUsageAPI.transferTable,
   
   // 预订相关
   createReservation: reservationAPI.createReservation,
   getReservations: reservationAPI.getReservations,
   cancelReservation: reservationAPI.cancelReservation,
   markArrived: reservationAPI.markArrived,
+  
+
 };

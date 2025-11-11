@@ -1,57 +1,68 @@
+const sequelize = require('./src/config/sequelize');
 const Table = require('./src/models/Table');
+const TableUsage = require('./src/models/TableUsage');
+const TableReservation = require('./src/models/TableReservation');
+const Member = require('./src/models/Member');
+const ConsumeRecord = require('./src/models/ConsumeRecord');
+const Employee = require('./src/models/Employee');
 
-async function queryTables() {
+async function queryAllTables() {
   try {
-    console.log('正在查询球桌数据...');
+    console.log('🔍 正在查询数据库所有表结构和数据...\n');
     
-    // 查询所有球桌
-    const tables = await Table.findAll({
-      attributes: ['table_id', 'table_no', 'status', 'position_x', 'position_y', 'size_width', 'size_height', 'rotation'],
-      order: [['table_id', 'ASC']]
-    });
+    // 获取所有模型信息
+    const models = [
+      { name: '球桌表 (tables)', model: Table },
+      { name: '球桌使用记录表 (table_usages)', model: TableUsage },
+      { name: '球桌预订表 (table_reservations)', model: TableReservation },
+      { name: '会员表 (members)', model: Member },
+      { name: '消费记录表 (consume_records)', model: ConsumeRecord },
+      { name: '员工表 (employees)', model: Employee }
+    ];
     
-    console.log(`\n共找到 ${tables.length} 张球桌：`);
-    console.log('='.repeat(80));
-    console.log('ID  |  桌号  |  状态  |  位置X  |  位置Y  |  宽度  |  高度  |  旋转角度');
-    console.log('='.repeat(80));
-    
-    let missingDataCount = 0;
-    const missingDataTables = [];
-    
-    tables.forEach(table => {
-      const tableData = table.toJSON();
-      const hasMissingData = tableData.position_x === null || tableData.position_y === null || 
-                           tableData.size_width === null || tableData.size_height === null;
-      
-      if (hasMissingData) {
-        missingDataCount++;
-        missingDataTables.push(tableData);
+    for (const { name, model } of models) {
+      try {
+        console.log('='.repeat(80));
+        console.log(`📊 ${name}`);
+        console.log('='.repeat(80));
+        
+        // 查询表数据
+        const data = await model.findAll();
+        console.log(`共 ${data.length} 条记录`);
+        
+        if (data.length > 0) {
+          // 获取字段名
+          const firstRecord = data[0].toJSON();
+          const fields = Object.keys(firstRecord);
+          console.log('\n字段列表:');
+          console.log(fields.join(', '));
+          
+          // 显示前5条记录作为示例
+          console.log('\n前5条记录示例:');
+          data.slice(0, 5).forEach((record, index) => {
+            console.log(`\n第 ${index + 1} 条:`);
+            const recordData = record.toJSON();
+            Object.entries(recordData).forEach(([key, value]) => {
+              console.log(`  ${key}: ${JSON.stringify(value)}`);
+            });
+          });
+        }
+        
+        console.log('');
+      } catch (err) {
+        console.log(`❌ 查询 ${name} 失败: ${err.message}\n`);
       }
-      
-      console.log(`${String(tableData.table_id).padEnd(3)} | ` +
-                  `${String(tableData.table_no).padEnd(5)} | ` +
-                  `${String(tableData.status).padEnd(5)} | ` +
-                  `${String(tableData.position_x || 'null').padEnd(7)} | ` +
-                  `${String(tableData.position_y || 'null').padEnd(7)} | ` +
-                  `${String(tableData.size_width || 'null').padEnd(6)} | ` +
-                  `${String(tableData.size_height || 'null').padEnd(6)} | ` +
-                  `${String(tableData.rotation || 0)}`);
-    });
-    
-    console.log('='.repeat(80));
-    
-    if (missingDataCount > 0) {
-      console.log(`\n⚠️  警告：发现 ${missingDataCount} 张球桌缺少位置或大小数据：`);
-      console.log('缺少数据的球桌：', missingDataTables.map(t => t.table_no).join(', '));
-    } else {
-      console.log('\n✅ 所有球桌数据完整！');
     }
     
+    console.log('='.repeat(80));
+    console.log('✅ 数据库表查询完成！');
+    
   } catch (error) {
-    console.error('查询球桌数据失败:', error.message);
+    console.error('❌ 查询数据库失败:', error.message);
   } finally {
+    await sequelize.close();
     process.exit();
   }
 }
 
-queryTables();
+queryAllTables();
